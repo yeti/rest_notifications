@@ -98,7 +98,7 @@ class NotificationSetting(CoreModel):
         return u"{0}".format(Notification.TYPES._triples[self.notification_type][1])
 
 
-def create_notifications(sender, **kwargs):
+def create_notification_settings(sender, **kwargs):
     sender_name = "{0}.{1}".format(sender._meta.app_label, sender._meta.object_name)
     if sender_name.lower() != settings.AUTH_USER_MODEL.lower():
         return
@@ -108,5 +108,3 @@ def create_notifications(sender, **kwargs):
         if not user.notification_settings.exists():
             user_settings = [NotificationSetting(user=user, notification_type=pk) for pk, name in Notification.TYPES]
             NotificationSetting.objects.bulk_create(user_settings)
-
-post_save.connect(create_notifications)
