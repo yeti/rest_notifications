@@ -17,7 +17,7 @@ class Notification(CoreModel):
     EMAIL = "email"
 
     notification_type = models.PositiveSmallIntegerField(choices=TYPES)
-    template_override = models.CharField(max_length=100, blank=True, null=True)
+    # template_override = models.CharField(max_length=100, blank=True, null=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="receiver", null=True)
     reporter = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="reporter", null=True, blank=True)
 
@@ -41,8 +41,8 @@ class Notification(CoreModel):
             data.update(self.content_object.extra_notification_params())
 
         configured_template_name = unicode(Notification.TYPES._triples[self.notification_type][2])
-        template_name = self.template_override if self.template_override else configured_template_name
-        return render_to_string("notifications/{}/{}".format(location, template_name), data)
+        # template_name = self.template_override if self.template_override else configured_template_name
+        return render_to_string("notifications/{}/{}".format(location, configured_template_name), data)
 
     def email_message(self):
         return self.message(Notification.EMAIL)
