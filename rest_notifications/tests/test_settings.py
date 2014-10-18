@@ -6,7 +6,7 @@ from rest_user.rest_user.test.factories import UserFactory
 __author__ = 'baylee'
 
 
-class NotificationTestCase(ManticomTestCase):
+class NotificationSettingsTestCase(ManticomTestCase):
     def test_can_only_see_own_notification_settings(self):
         user = UserFactory()
         UserFactory()

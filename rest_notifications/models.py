@@ -2,7 +2,6 @@ from django.conf import settings
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.db.models.signals import post_save
 from django.template.loader import render_to_string
 from celery.task import task
 from model_utils import Choices
@@ -18,9 +17,11 @@ class Notification(CoreModel):
 
     notification_type = models.PositiveSmallIntegerField(choices=TYPES)
     # template_override = models.CharField(max_length=100, blank=True, null=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="receiver", null=True)
-    reporter = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="reporter", null=True, blank=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="notifications_received", null=True)
+    reporter = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="notifications_sent", null=True, blank=True)
 
+    # The object that the notification is about, not the social model related to it
+    # E.g., if you Like a Post, the content_object for the notification is the Post, not the Like
     content_type = models.ForeignKey(ContentType)
     object_id = models.PositiveIntegerField(db_index=True)
     content_object = generic.GenericForeignKey()
@@ -54,6 +55,7 @@ class Notification(CoreModel):
         else:
             return "{0}".format(message)
 
+    @property
     def name(self):
         return u"{0}".format(Notification.TYPES._triples[self.notification_type][1])
 
@@ -71,8 +73,7 @@ def create_notification(receiver, reporter, content_object, notification_type, t
     notification = Notification.objects.create(user=receiver,
                                                reporter=reporter,
                                                content_object=content_object,
-                                               notification_type=notification_type,
-                                               template_override=template_override)
+                                               notification_type=notification_type)
     notification.save()
 
     notification_setting = NotificationSetting.objects.get(notification_type=notification_type, user=receiver)
