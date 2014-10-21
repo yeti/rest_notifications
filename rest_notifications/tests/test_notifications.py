@@ -7,6 +7,7 @@ from manticore_django.manticore_django.utils import get_class
 from rest_core.rest_core.test import ManticomTestCase
 from rest_notifications.rest_notifications.models import create_notification, Notification, NotificationSetting
 from rest_notifications.rest_notifications.utils import send_email_notification
+from rest_social.rest_social.models import Comment
 from rest_social.rest_social.utils import get_social_model
 from rest_user.rest_user.test.factories import UserFactory
 
@@ -135,4 +136,23 @@ class NotificationsTestCase(ManticomTestCase):
                                                          reporter=self.reporter,
                                                          content_type=ContentType.objects.get_for_model(SocialModel),
                                                          notification_type=Notification.TYPES.like).count()
+        self.assertEquals(notification_count, 1)
+
+    def comment_mention_creates_notification(self):
+        """
+        User receives a notification when their username is @mentioned, even if they are not the owner of the post
+        """
+        url = reverse("comments-list")
+        content_type = ContentType.objects.get_for_model(SocialModel)
+        data = {
+            "content_type": content_type.pk,
+            "object_id": SocialFactory().pk,
+            "description": "@{} look at my cool comment!".format(self.social_obj.user.username)
+        }
+        self.assertManticomPOSTResponse(url, "$commentRequest", "$commentResponse", data, self.reporter)
+        notification_count = Notification.objects.filter(user=self.social_obj.user,
+                                                         reporter=self.reporter,
+                                                         content_type=ContentType.objects.get_for_model(Comment),
+                                                         notification_type=Notification.TYPES.mention).count()
+
         self.assertEquals(notification_count, 1)
