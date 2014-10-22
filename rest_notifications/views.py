@@ -1,6 +1,6 @@
 from rest_framework import mixins, generics
 from rest_framework.viewsets import GenericViewSet
-from rest_core.rest_core.permissions import IsAuthorOrReadOnly
+from rest_core.rest_core.permissions import IsOwner
 from rest_notifications.rest_notifications.models import NotificationSetting, Notification, create_notification
 from rest_notifications.rest_notifications.serializers import NotificationSettingSerializer, NotificationSerializer
 from rest_social.rest_social.views import CommentViewSet, FollowViewSet, ShareViewSet, LikeViewSet
@@ -13,7 +13,7 @@ class NotificationSettingViewSet(mixins.UpdateModelMixin,
                                  GenericViewSet):
     queryset = NotificationSetting.objects.all()
     serializer_class = NotificationSettingSerializer
-    permission_classes = (IsAuthorOrReadOnly,)
+    permission_classes = (IsOwner,)
 
     def pre_save(self, obj):
         obj.user = self.request.user
