@@ -1,8 +1,17 @@
 from rest_framework import serializers
-from rest_notifications.rest_notifications.models import NotificationSetting, Notification
+from rest_notifications.rest_notifications.models import NotificationSetting, Notification, PushwooshToken
 from rest_user.rest_user.serializers import UserSerializer
 
 __author__ = 'baylee'
+
+
+class PushwooshTokenSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    hwid = serializers.CharField(write_only=True)
+    language = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = PushwooshToken
 
 
 class NotificationSettingSerializer(serializers.ModelSerializer):

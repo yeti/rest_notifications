@@ -3,10 +3,11 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core import mail
 from django.core.urlresolvers import reverse
+from mock import MagicMock
 from manticore_django.manticore_django.utils import get_class
 from rest_core.rest_core.test import ManticomTestCase
 from rest_notifications.rest_notifications.models import create_notification, Notification, NotificationSetting
-from rest_notifications.rest_notifications.utils import send_email_notification
+from rest_notifications.rest_notifications.utils import send_email_notification, send_push_notification, PushwooshClient
 from rest_social.rest_social.models import Comment
 from rest_social.rest_social.utils import get_social_model
 from rest_user.rest_user.test.factories import UserFactory
@@ -25,6 +26,28 @@ class NotificationsTestCase(ManticomTestCase):
         self.social_obj = SocialFactory()
         self.receiver = UserFactory()
         self.reporter = UserFactory()
+        PushwooshClient.invoke = MagicMock(return_value={"status_code": 200})
+
+    def test_create_pushwoosh_token(self):
+        url = reverse("pushwoosh_token")
+        data = {
+            "token": "ABC123",
+            "language": "en",
+            "hwid": "XYZ456"
+        }
+        self.assertManticomPOSTResponse(url, "$pushwooshTokenRequest", "$pushwooshTokenResponse", data, self.receiver)
+
+        # Non-authenticated users can't create a token
+        self.assertManticomPOSTResponse(url, "$pushwooshTokenRequest", "$pushwooshTokenResponse", data, None,
+                                        unauthorized=True)
+
+        # Can't create token if write-only language and hwid data is missing
+        bad_data = {
+            "token": "ABC123"
+        }
+        self.add_credentials(self.receiver)
+        response = self.client.post(url, bad_data, format="json")
+        self.assertHttpBadRequest(response)
 
     def test_email_notification_sent(self):
         message = "<h1>You have a notification!</h1>"
@@ -36,7 +59,9 @@ class NotificationsTestCase(ManticomTestCase):
         self.assertEqual(mail.outbox[0].alternatives, [(message, "text/html")])
 
     def test_push_notification_sent(self):
-        pass
+        message = "<h1>You have a notification!</h1>"
+        response = send_push_notification(self.receiver, message)
+        self.assertEqual(response["status_code"], 200)
 
     def test_create_notification(self):
         notification_count = Notification.objects.count()
@@ -53,25 +78,25 @@ class NotificationsTestCase(ManticomTestCase):
         setting = NotificationSetting.objects.get(notification_type=settings.NOTIFICATION_TYPES[0][0],
                                                   user=self.receiver)
 
-        # An email is sent if allow_email is True
+        # An email and a push are sent if allow_email and allow_push are True
         create_notification(self.receiver, self.reporter, self.social_obj, settings.NOTIFICATION_TYPES[0][0])
         self.assertEqual(len(mail.outbox), 1)
-        # TODO: Add check for push notification
+        self.assertTrue(len(PushwooshClient.invoke.mock_calls), 1)
 
         # No new email is sent if allow_email is False
         setting.allow_email = False
         setting.save()
         create_notification(self.receiver, self.reporter, self.social_obj, settings.NOTIFICATION_TYPES[0][0])
         self.assertEqual(len(mail.outbox), 1)
-        # TODO: A push message is still sent
+        self.assertTrue(len(PushwooshClient.invoke.mock_calls), 2)
 
-        # allow_push can be False and an email will still send if allow_email is True
+        # If allow_push is False and allow_email True, an email is sent and a push isn't
         setting.allow_email = True
         setting.allow_push = False
         setting.save()
         create_notification(self.receiver, self.reporter, self.social_obj, settings.NOTIFICATION_TYPES[0][0])
         self.assertEqual(len(mail.outbox), 2)
-        # TODO: A push message is still sent
+        self.assertTrue(len(PushwooshClient.invoke.mock_calls), 2)
 
     def test_can_only_see_own_notifications(self):
         create_notification(self.receiver, self.reporter, self.social_obj, settings.NOTIFICATION_TYPES[0][0])

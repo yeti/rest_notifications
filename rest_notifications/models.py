@@ -109,3 +109,8 @@ def create_notification_settings(sender, **kwargs):
         if not user.notification_settings.exists():
             user_settings = [NotificationSetting(user=user, notification_type=pk) for pk, name in Notification.TYPES]
             NotificationSetting.objects.bulk_create(user_settings)
+
+
+class PushwooshToken(CoreModel):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="pushwoosh_tokens")
+    token = models.CharField(max_length=120)

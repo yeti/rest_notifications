@@ -1,11 +1,34 @@
+from django.conf import settings
 from rest_framework import mixins, generics
+from rest_framework.exceptions import APIException
 from rest_framework.viewsets import GenericViewSet
+from pypushwoosh import client, constants
+from pypushwoosh.command import RegisterDeviceCommand
 from rest_core.rest_core.permissions import IsOwner
-from rest_notifications.rest_notifications.models import NotificationSetting, Notification, create_notification
-from rest_notifications.rest_notifications.serializers import NotificationSettingSerializer, NotificationSerializer
+from rest_notifications.rest_notifications.models import NotificationSetting, Notification, create_notification, \
+    PushwooshToken
+from rest_notifications.rest_notifications.serializers import NotificationSettingSerializer, NotificationSerializer, \
+    PushwooshTokenSerializer
 from rest_social.rest_social.views import CommentViewSet, FollowViewSet, ShareViewSet, LikeViewSet
 
 __author__ = 'baylee'
+
+
+class PushwooshTokenView(generics.CreateAPIView):
+    queryset = PushwooshToken.objects.all()
+    serializer_class = PushwooshTokenSerializer
+    permission_classes = (IsOwner,)
+
+    def pre_save(self, obj):
+        obj.user = self.request.user
+
+        push_client = client.PushwooshClient()
+        command = RegisterDeviceCommand(settings.PUSHWOOSH_APP_CODE, obj.hwid, constants.PLATFORM_IOS, obj.language,
+                                        obj.token)
+        response = push_client.invoke(command)
+
+        if response["status_code"] != 200:
+            raise APIException("Authentication with notification service failed")
 
 
 class NotificationSettingViewSet(mixins.UpdateModelMixin,

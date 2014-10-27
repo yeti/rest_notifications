@@ -1,7 +1,8 @@
 from django.conf.urls import patterns, url, include
 from rest_framework import routers
 from rest_notifications.rest_notifications.views import NotificationSettingViewSet, NotificationView, \
-    NotificationFollowViewSet, NotificationLikeViewSet, NotificationShareViewSet, NotificationCommentViewSet
+    NotificationFollowViewSet, NotificationLikeViewSet, NotificationShareViewSet, NotificationCommentViewSet, \
+    PushwooshTokenView
 
 
 router = routers.DefaultRouter()
@@ -15,4 +16,5 @@ router.register(r'comments', NotificationCommentViewSet, base_name='comments')
 urlpatterns = patterns('',
     url(r'^', include(router.urls)),
     url(r'^notifications/$', NotificationView.as_view(), name="notifications"),
+    url(r'^pushwoosh_token/$', PushwooshTokenView.as_view(), name="pushwoosh_token"),
 )

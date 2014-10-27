@@ -8,12 +8,14 @@ from pypushwoosh.filter import ApplicationFilter
 
 def send_push_notification(receiver, message):
     command = CreateTargetedMessageCommand()
-    command.auth = 'AUTH_TOKEN'
-    command.devices_filter = ApplicationFilter('APP-CODE')
-    command.content = "Hello world!"
+    command.auth = settings.PUSHWOOSH_AUTH_TOKEN
+    command.devices_filter = ApplicationFilter(settings.PUSHWOOSH_APP_CODE)
+    # TODO: I don't think this is actually limiting the devices sent to
+    command.devices = [token.token for token in receiver.pushwoosh_tokens.all()]
+    command.content = message
 
     client = PushwooshClient()
-    print client.invoke(command)
+    return client.invoke(command)
 
 
 def send_email_notification(receiver, message, reply_to=None):
