@@ -48,6 +48,7 @@ class NotificationSettingViewSet(mixins.UpdateModelMixin,
 class NotificationView(generics.ListAPIView):
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
+    permission_classes = (IsOwner,)
 
     def get_queryset(self):
         return self.queryset.filter(user=self.request.user)
