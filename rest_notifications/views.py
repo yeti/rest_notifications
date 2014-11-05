@@ -1,6 +1,6 @@
 from django.conf import settings
 from rest_framework import mixins, generics
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.viewsets import GenericViewSet
 from pypushwoosh import client, constants
 from pypushwoosh.command import RegisterDeviceCommand
@@ -28,7 +28,7 @@ class PushwooshTokenView(generics.CreateAPIView):
         response = push_client.invoke(command)
 
         if response["status_code"] != 200:
-            raise APIException("Authentication with notification service failed")
+            raise AuthenticationFailed("Authentication with notification service failed")
 
 
 class NotificationSettingViewSet(mixins.UpdateModelMixin,
