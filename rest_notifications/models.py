@@ -96,7 +96,7 @@ class NotificationSetting(CoreModel):
         unique_together = ('notification_type', 'user')
 
     def name(self):
-        return u"{0}".format(Notification.TYPES._triples[self.notification_type][1])
+        return u"{0}".format(Notification.TYPES._triples[self.notification_type][2])
 
 
 def create_notification_settings(sender, **kwargs):

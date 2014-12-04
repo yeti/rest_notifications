@@ -15,9 +15,11 @@ class PushwooshTokenSerializer(serializers.ModelSerializer):
 
 
 class NotificationSettingSerializer(serializers.ModelSerializer):
+    name = serializers.Field(source='name')
+
     class Meta:
         model = NotificationSetting
-        fields = ('id', 'notification_type', 'allow_push', 'allow_email')
+        fields = ('id', 'name', 'allow_push', 'allow_email')
         read_only_fields = ('id', 'notification_type')
 
 
