@@ -41,7 +41,7 @@ class Notification(CoreModel):
         if hasattr(self.content_object, 'extra_notification_params'):
             data.update(self.content_object.extra_notification_params())
 
-        configured_template_name = unicode(Notification.TYPES._triples[self.notification_type][2])
+        configured_template_name = unicode(Notification.TYPES._triples[self.notification_type][1]) + '.html'
         # template_name = self.template_override if self.template_override else configured_template_name
         return render_to_string("notifications/{}/{}".format(location, configured_template_name), data)
 
